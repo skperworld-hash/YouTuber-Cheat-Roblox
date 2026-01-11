@@ -1,30 +1,33 @@
---[[
-    Lenovo Way 2026 GUI for YouTuber Simulator
-    Functions: Mod Menu, Auto-Click (Perfect Hit), Money Set
-]]
-
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 local Window = Library.CreateLib("Lenovo Way 2026 - YouTuber Sim", "DarkTheme")
 
--- Вкладка Главная
 local Main = Window:NewTab("Main")
-local Section = Main:NewSection("Automation")
+local Section = Main:NewSection("Money & Clicks")
 
--- Автоклик (чтобы всегда попадать в кнопки на ПК)
-Section:NewToggle("Auto Click (Perfect)", "Автоматически ловит кнопки", function(state)
-    getgenv().AutoClick = state
-    spawn(function()
-        while getgenv().AutoClick do
-            -- Логика нажатия на кнопки записи (ClickEvent)
-            game:GetService("ReplicatedStorage").Events.ClickEvent:FireServer()
-            wait(0.01) -- Очень быстро
+-- Улучшенный автоклик (находит удаленное событие)
+Section:NewToggle("Auto Click", "Фарм видео", function(state)
+    getgenv().Auto = state
+    while getgenv().Auto do
+        -- Пытаемся найти событие клика автоматически
+        local event = game:GetService("ReplicatedStorage"):FindFirstChild("ClickEvent", true) or 
+                      game:GetService("ReplicatedStorage"):FindFirstChild("Click", true)
+        if event then
+            event:FireServer()
         end
-    end)
+        wait(0.01)
+    end
 end)
 
--- Функция "Много денег" (Визуально или через ивент, если работает)
-Section:NewTextBox("Выдать деньги", "Введите сумму", function(txt)
-    print("Попытка выдать сумму: " .. txt)
-    -- В большинстве симуляторов это работает через ивент получения награды
-    game:GetService("ReplicatedStorage").Events.ClaimReward:FireServer(tonumber(txt))
+-- Выдать деньги (через изменение данных игрока)
+Section:NewTextBox("Выдать деньги", "Впиши число", function(txt)
+    local amount = tonumber(txt)
+    -- Пытаемся изменить значение в лидерстатс (визуально + попытка синхронизации)
+    local stats = game.Players.LocalPlayer:FindFirstChild("leaderstats")
+    if stats then
+        local money = stats:FindFirstChild("Money") or stats:FindFirstChild("Cash")
+        if money then
+            money.Value = money.Value + amount
+        end
+    end
+    print("Lenovo Way: Попытка добавить " .. txt)
 end)
